@@ -1,4 +1,4 @@
-import streamlit as st
+               import streamlit as st
 from PIL import Image
 import google.generativeai as genai
 
@@ -29,7 +29,7 @@ if uploaded_file is not None:
     if st.button("✨ Generate Metadata Otomatis"):
         with st.spinner("AI sedang menganalisis visual gambar Anda..."):
             try:
-                # Menggunakan model gemini-2.5-flash terbaru
+                # Menggunakan model default stabil yang didukung penuh oleh Google AI Studio saat ini
                 model = genai.GenerativeModel('gemini-2.5-flash')
 
                 prompt = f"""
@@ -46,4 +46,13 @@ if uploaded_file is not None:
                 st.write(response.text)
 
             except Exception as e:
-                st.error(f"Terjadi kesalahan: {e}")
+                # Fallback otomatis ke model alternatif jika model utama mengalami kendala
+                try:
+                    model_fallback = genai.GenerativeModel('gemini-1.5-flash')
+                    response = model_fallback.generate_content([prompt, image])
+                    st.success("Analisis AI Selesai!")
+                    st.subheader("Hasil Metadata AI:")
+                    st.write(response.text)
+                except Exception as err:
+                    st.error(f"Terjadi kesalahan: {err}")
+ 
