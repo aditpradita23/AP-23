@@ -31,7 +31,8 @@ if uploaded_file is not None:
                 try:
                     genai.configure(api_key=api_key)
                     # Menggunakan model standar gemini-pro-vision atau gemini-flash
-                    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                    model = genai.GenerativeModel('gemini-1.5-flash')
+
                     
                     prompt = f"""
                     Analyze this image for a {platform} microstock contributor. 
