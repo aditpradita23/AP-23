@@ -29,7 +29,8 @@ if uploaded_file is not None:
     if st.button("✨ Generate Metadata Otomatis"):
         with st.spinner("AI sedang menganalisis visual gambar Anda..."):
             try:
-                model = genai.GenerativeModel('gemini-1.5-pro')
+                model = genai.GenerativeModel('gemini-1.5-flash')
+
 
                 prompt = f"""
                 Analyze this image for a {platform} microstock contributor.
