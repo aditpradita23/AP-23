@@ -30,7 +30,8 @@ if uploaded_file is not None:
         with st.spinner("AI sedang menganalisis visual gambar Anda..."):
             try:
                 # Menggunakan model default stabil yang didukung penuh oleh Google AI Studio saat ini
-                model = genai.GenerativeModel('gemini-2.5-flash')
+                model = genai.GenerativeModel('gemini-1.5-flash')
+
 
                 prompt = f"""
                 Analyze this image for a {platform} microstock contributor.
