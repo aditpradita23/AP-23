@@ -1,59 +1,43 @@
 import streamlit as st
-from PIL import Image
-import google.generativeai as genai
 
-st.set_page_config(page_title="Microstock AI Generator")
-st.title("🚀 Microstock AI Caption & Keyword Generator")
-st.write("Upload gambar karya Anda, dan AI akan otomatis membaca isinya untuk menghasilkan metadata Adobe Stock & Shutterstock.")
+st.set_page_config(page_title="Microstock Helper Sederhana", page_icon="🛠️")
+st.title("🛠️ Microstock Metadata Organizer")
+st.write("Alat praktis tanpa API Key untuk merapikan, menghitung, dan memformat judul serta kata kunci microstock Anda.")
 
-# Mengambil API Key secara aman dari Secrets Streamlit
-try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-    genai.configure(api_key=api_key)
-except Exception:
-    st.error("API Key belum diatur di Streamlit Secrets. Harap atur terlebih dahulu.")
+# 1. Input Judul
+st.subheader("1. Pengaturan Judul")
+raw_title = st.text_input("Masukkan Judul (Title):", "Beautiful sunset over the calm ocean waves")
 
-platform = st.selectbox(
-    "Pilih Platform Microstock Tujuan:",
-    ["Adobe Stock", "Shutterstock"]
-)
+# 2. Input Kata Kunci
+st.subheader("2. Pengaturan Kata Kunci")
+st.write("Tulis atau *paste* kata kunci Anda di bawah ini (bisa dipisah dengan koma, spasi, atau baris baru).")
+raw_keywords = st.text_area("Daftar Kata Kunci (Keywords):", "sunset, ocean, beach, nature, wave, water, beautiful, summer, sky, clouds, ocean, sunset")
 
-max_keywords = 49 if platform == "Adobe Stock" else 50
-
-uploaded_file = st.file_uploader(f"Pilih gambar untuk {platform}...", type=["jpg", "jpeg", "png"])
-
-if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    st.image(image, caption="Gambar yang diunggah", use_container_width=True)
-
-    if st.button("✨ Generate Metadata Otomatis"):
-        with st.spinner("AI sedang menganalisis visual gambar Anda..."):
-            try:
-                # Menggunakan model default stabil yang didukung penuh oleh Google AI Studio saat ini
-                model = genai.GenerativeModel('gemini-1.5-flash')
-
-
-                prompt = f"""
-                Analyze this image for a {platform} microstock contributor.
-                Provide the output strictly in two sections:
-                1. Title: A compelling, commercial, professional title.
-                2. Keywords: Exactly {max_keywords} relevant comma-separated keywords.
-                """
-
-                response = model.generate_content([prompt, image])
-
-                st.success("Analisis AI Selesai!")
-                st.subheader("Hasil Metadata AI:")
-                st.write(response.text)
-
-            except Exception as e:
-                # Fallback otomatis ke model alternatif jika model utama mengalami kendala
-                try:
-                    model_fallback = genai.GenerativeModel('gemini-1.5-flash')
-                    response = model_fallback.generate_content([prompt, image])
-                    st.success("Analisis AI Selesai!")
-                    st.subheader("Hasil Metadata AI:")
-                    st.write(response.text)
-                except Exception as err:
-                    st.error(f"Terjadi kesalahan: {err}")
- 
+if st.button("✨ Format dan Rapikan Otomatis"):
+    if raw_keywords:
+        # Membersihkan dan menghilangkan duplikat kata kunci secara otomatis
+        words = []
+        for line in raw_keywords.replace(',', '\n').split('\n'):
+            for word in line.split():
+                cleaned = word.strip().lower()
+                if cleaned and cleaned not in words:
+                    words.append(cleaned)
+        
+        keyword_count = len(words)
+        formatted_keywords = ", ".join(words)
+        
+        st.success("Berhasil Dirapikan!")
+        
+        st.markdown("### Hasil Siap Pakai:")
+        
+        st.text_input("Judul Final:", raw_title)
+        
+        st.markdown(f"**Total Kata Kunci:** `{keyword_count}` kata")
+        st.text_area("Kata Kunci Final (Comma-Separated):", formatted_keywords, height=150)
+        
+        if keyword_count > 49:
+            st.warning("⚠️ Catatan: Shutterstock/Adobe Stock biasanya membatasi maksimal 50 kata kunci. Sebaiknya kurangi beberapa kata.")
+        else:
+            st.info("✅ Jumlah kata kunci sudah ideal dan aman!")
+    else:
+        st.error("Silakan masukkan kata kunci terlebih dahulu.")
