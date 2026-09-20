@@ -36,7 +36,7 @@ if uploaded_file is not None:
                         selected_model_name = m.name
                         break
                 
-                model = genai.GenerativeModel(selected_model_name)
+                model = genai.GenerativeModel('gemini-2.5-flash')
 
                 prompt = f"""
                 Analyze this image for a {platform} microstock contributor.
