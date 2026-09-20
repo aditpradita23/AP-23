@@ -1,21 +1,28 @@
 import streamlit as st
+from PIL import Image
 
-st.set_page_config(page_title="Microstock Helper Sederhana", page_icon="🛠️")
-st.title("🛠️ Microstock Metadata Organizer")
-st.write("Alat praktis tanpa API Key untuk merapikan, menghitung, dan memformat judul serta kata kunci microstock Anda.")
+st.set_page_config(page_title="Microstock Helper", page_icon="🖼️")
+st.title("🖼️ Microstock Metadata Organizer & Preview")
+st.write("Unggah gambar untuk melihat pratinjau karya Anda, lalu rapikan judul dan kata kuncinya secara manual tanpa takut error API.")
 
-# 1. Input Judul
-st.subheader("1. Pengaturan Judul")
-raw_title = st.text_input("Masukkan Judul (Title):", "Beautiful sunset over the calm ocean waves")
+# 1. Kotak Upload Foto (Hanya untuk preview gambar)
+uploaded_file = st.file_uploader("Pilih gambar karya Anda...", type=["jpg", "jpeg", "png"])
 
-# 2. Input Kata Kunci
-st.subheader("2. Pengaturan Kata Kunci")
-st.write("Tulis atau *paste* kata kunci Anda di bawah ini (bisa dipisah dengan koma, spasi, atau baris baru).")
-raw_keywords = st.text_area("Daftar Kata Kunci (Keywords):", "sunset, ocean, beach, nature, wave, water, beautiful, summer, sky, clouds, ocean, sunset")
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Pratinjau Gambar Anda", use_container_width=True)
 
-if st.button("✨ Format dan Rapikan Otomatis"):
+st.markdown("---")
+
+# 2. Input Judul
+st.subheader("Pengaturan Judul & Kata Kunci")
+raw_title = st.text_input("Judul (Title):", "Beautiful landscape photography")
+
+# 3. Input Kata Kunci
+raw_keywords = st.text_area("Daftar Kata Kunci (pisahkan dengan koma atau spasi):", "landscape, nature, beautiful, mountain, sky, clouds, scenery")
+
+if st.button("✨ Rapikan dan Hitung Keywords"):
     if raw_keywords:
-        # Membersihkan dan menghilangkan duplikat kata kunci secara otomatis
         words = []
         for line in raw_keywords.replace(',', '\n').split('\n'):
             for word in line.split():
@@ -27,17 +34,14 @@ if st.button("✨ Format dan Rapikan Otomatis"):
         formatted_keywords = ", ".join(words)
         
         st.success("Berhasil Dirapikan!")
-        
-        st.markdown("### Hasil Siap Pakai:")
-        
-        st.text_input("Judul Final:", raw_title)
-        
         st.markdown(f"**Total Kata Kunci:** `{keyword_count}` kata")
-        st.text_area("Kata Kunci Final (Comma-Separated):", formatted_keywords, height=150)
         
-        if keyword_count > 49:
-            st.warning("⚠️ Catatan: Shutterstock/Adobe Stock biasanya membatasi maksimal 50 kata kunci. Sebaiknya kurangi beberapa kata.")
+        st.text_input("Judul Final (Siap Salin):", raw_title)
+        st.text_area("Kata Kunci Final (Siap Salin):", formatted_keywords, height=150)
+        
+        if keyword_count > 50:
+            st.warning("⚠️ Catatan: Kebanyakan microstock membatasi maksimal 50 kata kunci.")
         else:
-            st.info("✅ Jumlah kata kunci sudah ideal dan aman!")
+            st.info("✅ Jumlah kata kunci aman!")
     else:
-        st.error("Silakan masukkan kata kunci terlebih dahulu.")
+        st.error("Masukkan kata kunci terlebih dahulu.")
