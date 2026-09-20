@@ -1,45 +1,22 @@
 import streamlit as st
 from PIL import Image
+import google.generativeai as genai
 
 st.set_page_config(page_title="Microstock AI Generator", page_icon="🚀", layout="centered")
 
 st.title("🚀 Microstock AI Caption & Keyword Generator")
-st.write("Pilih platform tujuan Anda, atur kategori, lalu upload karya untuk menghasilkan metadata.")
+st.write("Upload gambar karya Anda, dan AI akan otomatis membaca isinya untuk menghasilkan metadata Adobe Stock & Shutterstock.")
 
-# Menu pilihan platform di bagian utama atau sidebar
+# Kolom untuk memasukkan API Key Gemini di Sidebar / Menu Atas
+st.sidebar.header("🔑 Konfigurasi AI")
+api_key = st.sidebar.text_input("Masukkan Google Gemini API Key:", type="password")
+
+# Menu pilihan platform
 platform = st.selectbox(
     "Pilih Platform Microstock Tujuan:",
     ["Adobe Stock", "Shutterstock"]
 )
 
-st.info(f"Mode aktif: **{platform}** dipilih.")
-
-# Pengaturan tambahan: Kategori dan Jenis Aset
-st.subheader("⚙️ Detail Aset")
-col1, col2 = st.columns(2)
-
-with col1:
-    asset_type = st.selectbox(
-        "Jenis Aset:",
-        ["Photo (Foto)", "Illustration (Ilustrasi)", "Vector (Vektor)", "3D Render"]
-    )
-
-with col2:
-    category = st.selectbox(
-        "Kategori Utama:",
-        [
-            "Animals (Hewan)",
-            "Architecture (Arsitektur)",
-            "Business (Bisnis)",
-            "Food (Makanan)",
-            "Landscapes (Pemandangan)",
-            "People (Orang)",
-            "Nature (Alam)",
-            "Technology (Teknologi)"
-        ]
-    )
-
-# Aturan batas keyword berdasarkan platform
 max_keywords = 49 if platform == "Adobe Stock" else 50
 
 # Upload file gambar
@@ -47,23 +24,30 @@ uploaded_file = st.file_uploader(f"Pilih gambar untuk {platform}...", type=["jpg
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    st.image(image, caption=f"Gambar ({asset_type} - {category})", use_container_width=True)
+    st.image(image, caption="Gambar yang diunggah", use_container_width=True)
     
-    st.info(f"Menganalisis gambar untuk {platform}...")
-    
-    # Hasil simulasi AI berdasarkan pilihan kategori & jenis
-    clean_category = category.split(" ")[0].lower()
-    clean_type = asset_type.split(" ")[0].lower()
-    
-    sample_title = f"Professional {clean_type} depicting {clean_category} for commercial and creative projects on {platform}"
-    sample_keywords = f"{clean_category}, {clean_type}, stock photo, commercial use, creative, professional design, high resolution, digital asset, marketing, background"
-
-    st.success("Analisis selesai!")
-    
-    st.subheader(f"Rekomendasi Judul (Title) - {platform}:")
-    st.code(sample_title, language="text")
-    
-    st.subheader(f"Rekomendasi Kata Kunci (Max {max_keywords} Keywords):")
-    st.code(sample_keywords, language="text")
-    
-    st.caption(f"Tip: Metadata ini telah disesuaikan dengan kategori {category} untuk standar {platform}.")
+    if not api_key:
+        st.warning("⚠️ Masukkan Google Gemini API Key Anda terlebih dahulu di menu sidebar untuk mulai menganalisis gambar secara otomatis.")
+    else:
+        if st.button("✨ Generate Metadata Otomatis"):
+            with st.spinner("AI sedang menganalisis visual gambar Anda..."):
+                try:
+                    # Konfigurasi Gemini API
+                    genai.configure(api_key=api_key)
+                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    
+                    prompt = f"""
+                    Analyze this image for a {platform} microstock contributor. 
+                    Provide the output strictly in two sections:
+                    1. Title: A compelling, commercial, professional title (around 10-15 words).
+                    2. Keywords: Exactly {max_keywords} relevant comma-separated keywords, ordered from most important to least important, no numbers, just keywords.
+                    """
+                    
+                    response = model.generate_content([prompt, image])
+                    
+                    st.success("Analisis AI Selesai!")
+                    st.subheader("Hasil Metadata AI:")
+                    st.write(response.text)
+                    
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan: {e}")
