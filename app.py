@@ -7,11 +7,9 @@ st.set_page_config(page_title="Microstock AI Generator", page_icon="🚀", layou
 st.title("🚀 Microstock AI Caption & Keyword Generator")
 st.write("Upload gambar karya Anda, dan AI akan otomatis membaca isinya untuk menghasilkan metadata Adobe Stock & Shutterstock.")
 
-# Kolom untuk memasukkan API Key Gemini di Sidebar / Menu Atas
 st.sidebar.header("🔑 Konfigurasi AI")
 api_key = st.sidebar.text_input("Masukkan Google Gemini API Key:", type="password")
 
-# Menu pilihan platform
 platform = st.selectbox(
     "Pilih Platform Microstock Tujuan:",
     ["Adobe Stock", "Shutterstock"]
@@ -19,7 +17,6 @@ platform = st.selectbox(
 
 max_keywords = 49 if platform == "Adobe Stock" else 50
 
-# Upload file gambar
 uploaded_file = st.file_uploader(f"Pilih gambar untuk {platform}...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
@@ -32,9 +29,9 @@ if uploaded_file is not None:
         if st.button("✨ Generate Metadata Otomatis"):
             with st.spinner("AI sedang menganalisis visual gambar Anda..."):
                 try:
-                    # Konfigurasi Gemini API
                     genai.configure(api_key=api_key)
-                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    # Menggunakan model standar gemini-pro-vision atau gemini-flash
+                    model = genai.GenerativeModel('gemini-1.5-flash-latest')
                     
                     prompt = f"""
                     Analyze this image for a {platform} microstock contributor. 
