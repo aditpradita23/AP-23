@@ -29,14 +29,8 @@ if uploaded_file is not None:
     if st.button("✨ Generate Metadata Otomatis"):
         with st.spinner("AI sedang menganalisis visual gambar Anda..."):
             try:
-                # Otomatis mendeteksi model Gemini yang mendukung fitur gambar (vision)
-                selected_model_name = 'gemini-1.5-flash'
-                for m in genai.list_models():
-                    if 'generateContent' in m.supported_generation_methods and 'flash' in m.name.lower():
-                        selected_model_name = m.name
-                        break
-                
-                model = genai.GenerativeModel('gemini-2.5-flash')
+                # Menggunakan model standar yang didukung luas
+                model = genai.GenerativeModel('gemini-1.5-flash')
 
                 prompt = f"""
                 Analyze this image for a {platform} microstock contributor.
