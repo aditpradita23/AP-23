@@ -1,47 +1,73 @@
-import streamlit as st
+import os
 from PIL import Image
+import piexif
+import google.generativeai as genai
 
-st.set_page_config(page_title="Microstock Helper", page_icon="🖼️")
-st.title("🖼️ Microstock Metadata Organizer & Preview")
-st.write("Unggah gambar untuk melihat pratinjau karya Anda, lalu rapikan judul dan kata kuncinya secara manual tanpa takut error API.")
+# Konfigurasi API Key AI (Ganti dengan API Key Anda)
+genai.configure(api_key="MASUKKAN_GEMINI_API_KEY_ANDA")
 
-# 1. Kotak Upload Foto (Hanya untuk preview gambar)
-uploaded_file = st.file_uploader("Pilih gambar karya Anda...", type=["jpg", "jpeg", "png"])
+def generate_stock_metadata(image_path):
+    """Menggunakan AI Vision untuk membuat Judul dan Keyword stock photo"""
+    print(f"Menganalisis gambar: {image_path}...")
+    
+    img = Image.open(image_path)
+    
+    # Prompt khusus untuk kebutuhan Microstock (Adobe Stock)
+    prompt = (
+        "Analyze this image for a microstock website like Adobe Stock. "
+        "Provide your output strictly in this format:\n"
+        "TITLE: [A descriptive, commercial title under 70 characters]\n"
+        "KEYWORDS: [15-25 comma-separated relevant keywords, most important first]"
+    )
+    
+    # Memanggil model AI
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    response = model.generate_content([img, prompt])
+    
+    text = response.text
+    title = ""
+    keywords = ""
+    
+    # Parsing hasil dari AI
+    for line in text.split('\n'):
+        if line.startswith("TITLE:"):
+            title = line.replace("TITLE:", "").strip()
+        elif line.startswith("KEYWORDS:"):
+            keywords = line.replace("KEYWORDS:", "").strip()
+            
+    return title, keywords
 
-if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    st.image(image, caption="Pratinjau Gambar Anda", use_container_width=True)
+def embed_metadata_to_image(image_path, title, keywords):
+    """Menyematkan Judul dan Keyword ke EXIF/IPTC foto agar terbaca Adobe Stock"""
+    img = Image.open(image_path)
+    
+    # Load EXIF data yang sudah ada (jika ada)
+    exif_dict = piexif.load(image_path) if "exif" in img.info else {"0th": {}, "Exif": {}, "GPS": {}, "1st": {}, "thumbnail": None}
+    
+    # Masukkan Judul ke Tag ImageDescription (0th IFD)
+    exif_dict["0th"][piexif.ImageIFD.ImageDescription] = title.encode("utf-8")
+    
+    # Masukkan Keyword ke Tag XPKeywords (0th IFD) dalam format UTF-16LE
+    xp_keywords = keywords.encode("utf-16le") + b'\x00\x00'
+    exif_dict["0th"][piexif.ImageIFD.XPKeywords] = xp_keywords
+    
+    # Simpan kembali metadata ke file gambar
+    exif_bytes = piexif.dump(exif_dict)
+    img.save(image_path, exif=exif_bytes)
+    print(f"Berhasil menyematkan metadata ke: {image_path}\n")
 
-st.markdown("---")
-
-# 2. Input Judul
-st.subheader("Pengaturan Judul & Kata Kunci")
-raw_title = st.text_input("Judul (Title):", "Beautiful landscape photography")
-
-# 3. Input Kata Kunci
-raw_keywords = st.text_area("Daftar Kata Kunci (pisahkan dengan koma atau spasi):", "landscape, nature, beautiful, mountain, sky, clouds, scenery")
-
-if st.button("✨ Rapikan dan Hitung Keywords"):
-    if raw_keywords:
-        words = []
-        for line in raw_keywords.replace(',', '\n').split('\n'):
-            for word in line.split():
-                cleaned = word.strip().lower()
-                if cleaned and cleaned not in words:
-                    words.append(cleaned)
+# --- Eksekusi Utama ---
+if __name__ == "__main__":
+    target_image = "path_to_your_photo.jpg"  # Ganti dengan path foto Anda
+    
+    if os.path.exists(target_image):
+        # 1. Generate Judul & Keyword via AI
+        photo_title, photo_keywords = generate_stock_metadata(target_image)
         
-        keyword_count = len(words)
-        formatted_keywords = ", ".join(words)
+        print(f"Judul: {photo_title}")
+        print(f"Keywords: {photo_keywords}\n")
         
-        st.success("Berhasil Dirapikan!")
-        st.markdown(f"**Total Kata Kunci:** `{keyword_count}` kata")
-        
-        st.text_input("Judul Final (Siap Salin):", raw_title)
-        st.text_area("Kata Kunci Final (Siap Salin):", formatted_keywords, height=150)
-        
-        if keyword_count > 50:
-            st.warning("⚠️ Catatan: Kebanyakan microstock membatasi maksimal 50 kata kunci.")
-        else:
-            st.info("✅ Jumlah kata kunci aman!")
+        # 2. Masukkan ke dalam File Foto
+        embed_metadata_to_image(target_image, photo_title, photo_keywords)
     else:
-        st.error("Masukkan kata kunci terlebih dahulu.")
+        print("File gambar tidak ditemukan!")
